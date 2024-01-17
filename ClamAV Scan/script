@@ -5,10 +5,10 @@
 # Requires ClamAV container from Unraid Community Apps.
 # Further details: https://hub.docker.com/r/tquinnelly/clamav-alpine
 #
-# by - DaRK AnGeL (@masterwishx) 
+# by - DaRK AnGeL (@masterwishx)
 # 2023 Updated to use spaces in Shares Folders.
 # 2024 added Exclude SubFolders.
-#  
+#
 # Based on @Helediron,@Squid original script from Unraid Forum.
 
 # Edit these parameters:
@@ -65,7 +65,6 @@ HOSTSCANDIR=/mnt/user
 # Notify program
 NOTIFY=/usr/local/emhttp/plugins/dynamix/scripts/notify
 
-
 # Check if container is running (should not)
 count=$(docker ps | grep -c $CONTAINER)
 
@@ -101,10 +100,10 @@ fi
 if [ "$exclude_subfolders" = "yes" ]; then
   for f in "${FOLDERS[@]}"; do
     if [ -d "$HOSTSCANDIR/$f" ]; then
-      for subfolder in "$HOSTSCANDIR/$f"/*; do        
+      for subfolder in "$HOSTSCANDIR/$f"/*; do
         if [ -d "$subfolder" ]; then
-        # Check if the subfolder is in the EXCLUDEDSUBFOLDERS array
-          if [[ ! " ${EXCLUDEDSUBFOLDERS[@]} " =~ " ${subfolder##*/} " ]]; then
+          # Check if the subfolder is in the EXCLUDEDSUBFOLDERS array
+          if [[ ! "${EXCLUDEDSUBFOLDERS[@]}" =~ "${subfolder##*/}" ]]; then
             echo "/scan/$f/${subfolder##*/}" >>$HOSTAPPDATA/clamavtargets.txt
             echo "Scanning container /scan/$f/${subfolder##*/} -> host $subfolder"
             echo "Scanning container /scan/$f/${subfolder##*/} -> host $subfolder" >>$HOSTAPPDATA/clamavmaplog.txt
