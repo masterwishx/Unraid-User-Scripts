@@ -107,6 +107,9 @@ if [ "$exclude_subfolders" = "yes" ]; then
             echo "/scan/$f/${subfolder##*/}" >>$HOSTAPPDATA/clamavtargets.txt
             echo "Scanning container /scan/$f/${subfolder##*/} -> host $subfolder"
             echo "Scanning container /scan/$f/${subfolder##*/} -> host $subfolder" >>$HOSTAPPDATA/clamavmaplog.txt
+          else
+            echo "Info: Excluded share /scan/$f/${subfolder##*/} -> host $subfolder"
+            echo "Info: Excluded share /scan/$f/${subfolder##*/} -> host $subfolder" >>$HOSTAPPDATA/clamavmaplog.txt
           fi
         fi
       done
