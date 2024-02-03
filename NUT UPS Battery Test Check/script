@@ -1,0 +1,26 @@
+#!/bin/bash
+#This script run NUT UPS Battery Test after UPS Power OFF and ON if not enabled already
+#by DaRK AnGeL
+#
+# List UPS device
+ups_device=$(upsc -l)
+#
+
+# Notify program
+NOTIFY=/usr/local/emhttp/plugins/dynamix/scripts/notify
+
+# Add user and pass as variables
+USER="admin"
+PASS="adminpass"
+
+# Check if a self-test was initiated
+self_test_result=$(upsc $ups_device ups.test.result)
+
+if [ "$self_test_result" = "No test initiated" ]; then
+    echo "No Battery Self Test was initiated, Running Quick Self Test ..."
+    upscmd -u $USER -p $PASS $ups_device test.battery.start.quick
+    $NOTIFY -e "NUT UPS Battery Test Check" -s "UPS Battery Quick Self Test" -d "$ups_device Battery Self Test after UPS Power ON is Started ..." -i "normal" -l "/Settings/Userscripts"
+
+elif [ "$self_test_result" = "Done and passed" ]; then
+    echo -e "Battery Self Test already \"Done and passed\"\n" #next line added to better look in user script log
+fi

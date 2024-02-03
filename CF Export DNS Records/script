@@ -1,0 +1,65 @@
+#!/bin/bash
+# Script to Save Cloudflare DNS Records Setting to File
+# by - DaRK AnGeL (@masterwishx)
+
+# Notify program
+NOTIFY=/usr/local/emhttp/plugins/dynamix/scripts/notify
+
+# Cloudflare API token
+API_TOKEN="my token"
+
+# Zone IDs for the domains
+ZONE_IDS=("zone_id1" "zone_id2")
+
+# Current date
+CURRENT_DATE=$(date +%Y%m%d-%H%M%S)
+
+# Directory to save DNS records
+OUTPUT_DIR="/mnt/user/Backups/Progs/CF DNS Records"
+
+# File to save DNS records
+OUTPUT_FILE="$OUTPUT_DIR/cf-dns-records_$CURRENT_DATE.json"
+
+# Number of days after which files should be deleted
+DAYS_OLD=30
+
+# Create the output directory if it doesn't exist
+mkdir -p "$OUTPUT_DIR"
+
+# Variable to check if all zones were exported
+ALL_ZONES_EXPORTED=true
+
+# Loop over zone IDs and export DNS records
+for ZONE_ID in "${ZONE_IDS[@]}"; do
+    echo "Exporting DNS records for Zone ID: $ZONE_ID..."
+    RESPONSE=$(curl --silent --request GET \
+        --url "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/export" \
+        --header "Authorization: Bearer $API_TOKEN" \
+        --header "Content-Type: application/json")
+    # Check if Zone ID exist
+    if [[ "$RESPONSE" == *"\"success\":false"* ]]; then
+        ERROR_MESSAGE=$(echo "$RESPONSE" | grep -Po '"message":"\K[^"]*')
+        echo -e "Error: $ERROR_MESSAGE\n"
+        ALL_ZONES_EXPORTED=false
+    else
+        echo "$RESPONSE" >>"$OUTPUT_FILE"
+        echo -e "End of Exporting DNS records for this Zone ID.\n"
+    fi
+done
+
+if $ALL_ZONES_EXPORTED; then
+    echo "DNS records exported to $OUTPUT_FILE"
+    $NOTIFY -e "CF Export DNS Records" -s "Backup Cloudflare DNS Records" -d "Cloudflare DNS Records Setting from all Zones was saved to File: '"${OUTPUT_FILE##*/}"'" -i "normal" -l "/Settings/Userscripts"
+else
+    $NOTIFY -e "CF Export DNS Records" -s "Backup Cloudflare DNS Records" -d "Cloudflare DNS Records Setting from some Zones was NOT saved. Please check the logs." -i "warning" -l "/Settings/Userscripts"
+    echo "Some zones could not be exported. Please check the logs."
+fi
+
+# Cleanup function to remove old files
+cleanup() {
+    echo "Removing files older than $DAYS_OLD days..."
+    find "$OUTPUT_DIR" -name "*.json" -type f -mtime +$DAYS_OLD -exec rm -f {} \;
+}
+
+# Call the cleanup function
+cleanup
