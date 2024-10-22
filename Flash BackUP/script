@@ -1,0 +1,68 @@
+#!/bin/bash
+
+#### SECTION 1 ####------------------------------------------------------------------------------------------------------
+
+UNRAID_V=$(cat /etc/unraid-version | awk -F'"' '{print ($2)}') #  print the second field (the input fields being separated by - [ " ] )
+# Save Location
+DIR="/mnt/user/Backup/unRaiD Pro $UNRAID_V"
+# Save Location Name for Notify
+MOUNTNAME="Backup/.../unRaiD Pro $UNRAID_V"
+PROG_NAME="Flash_BackUP"
+SERVER_NAME="Tower"
+
+logger "$PROG_NAME to [$MOUNTNAME] Started..." -t$PROG_NAME
+echo "$PROG_NAME to [$MOUNTNAME] Started..."	
+
+logger "Native Unraid Flash BackUP script is Started ..." -t$PROG_NAME
+echo "Executing native unraid backup script"
+/usr/local/emhttp/webGui/scripts/flash_backup
+
+#### SECTION 2 ####------------------------------------------------------------------------------------------------------
+echo 'Remove symlink from emhttp'
+logger "Remove symlink from emhttp" -t$PROG_NAME
+find /usr/local/emhttp/ -maxdepth 1 -name '*flash-backup-*.zip' -delete
+
+sleep 5
+
+#### SECTION 3 ####------------------------------------------------------------------------------------------------------
+if [ ! -d "$DIR" ] ; then
+ 
+			echo "making directory as it does not yet exist"
+			logger "Making directory as it does not yet exist" -t$PROG_NAME
+            
+			#echo $(umask -S)
+			
+			# give permissions for directory
+			oldmask=$(umask -S)  # save the current mask
+			umask 000            # set the new mask  
+			# make the directory as it doesnt exist
+			mkdir -vpm 0777 "$DIR"
+			umask $oldmask  #set the old umask back
+		else
+			echo "As [$DIR] exists continuing."
+			logger "As [$DIR] exists continuing." -t$PROG_NAME
+			fi
+
+
+#### SECTION 4 ####------------------------------------------------------------------------------------------------------
+echo 'Move Flash Zip Backup from Root to Backup Destination'
+logger "Move Flash Zip Backup from Root to Backup Destination" -t$PROG_NAME
+mv /*-flash-backup-*.zip "$DIR"
+
+sleep 5
+
+#### SECTION 5 ####------------------------------------------------------------------------------------------------------
+echo 'Deleting Old Backups'
+logger "Deleting Old Backups" -t$PROG_NAME
+
+#ENTER NUMERIC VALUE OF DAYS AFTER "-MTIME +"
+find "$DIR"* -mtime +30 -exec rm -rfv {} \;
+
+echo 'All Done'
+logger "All Done" -t$PROG_NAME
+#### SECTION 6 ####------------------------------------------------------------------------------------------------------
+
+#UNCOMMENT THE NEXT LINE TO ENABLE GUI NOTIFICATION UPON COMPLETION 
+/usr/local/emhttp/webGui/scripts/notify -e "Unraid Server Notice" -s "Flash Zip Backup" -d "A copy of the $SERVER_NAME unraid flash disk has been backed up to Unraid User Share - [$MOUNTNAME]" -i "normal" -l "/Settings/Userscripts"
+logger "A copy of the $SERVER_NAME unraid flash disk has been backed up to Unraid User Share - [$MOUNTNAME]" -t$PROG_NAME
+exit
